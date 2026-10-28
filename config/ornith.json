@@ -1,0 +1,49 @@
+{
+ "exe": "/home/ryzr/momoe/engine/momoe",
+ "anthropic_thinking": "model",
+ "args": [
+  "--pack",
+  "/home/ryzr/momoe/packs/ornith15-iq4_xs",
+  "--native",
+  "/home/ryzr/momoe/models/ornith15-IQ4_XS/Ornith-1.5-35B-A3B-IQ4_XS.gguf",
+  "--expert-profile",
+  "/home/ryzr/momoe/data/expert-profile-qwen36.bin",
+  "--expert-cache",
+  "auto",
+  "--prefill",
+  "auto",
+  "--spec",
+  "4",
+  "--spec-min-p",
+  "0.5",
+  "--mtp",
+  "/home/ryzr/momoe/models/ornith15-IQ4_XS/Ornith-1.5-35B-A3B-IQ4_XS.gguf",
+  "--mtp-draft-vocab",
+  "/home/ryzr/momoe/data/draft_vocab.bin",
+  "--max-context",
+  "262144",
+  "--kv",
+  "int8",
+  "--kv-resident",
+  "262144",
+  "--memory-limit-mib",
+  "26624"
+ ],
+ "cwd": "/home/ryzr/momoe",
+ "tokenizer": "/home/ryzr/momoe/packs/ornith15-iq4_xs/tokenizer",
+ "model_name": "ornith-1.5-35b-a3b-iq4_xs",
+ "log": "/home/ryzr/momoe/logs/ornith.log",
+ "lib_dirs": [
+  "/home/ryzr/cuda/bin",
+  "/home/ryzr/cuda/lib64"
+ ],
+ "port": 8080,
+ "gpu": 0,
+ "gpus_asked": true,
+ "setup_tag": "ornith15-IQ4_XS",
+ "sampling": {
+  "temperature": 0.6,
+  "top_p": 0.95,
+  "top_k": 20
+ }
+}
