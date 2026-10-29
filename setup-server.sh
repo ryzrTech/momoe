@@ -8,7 +8,9 @@
 set -euo pipefail
 
 : "${SERVER_MODEL:=ornith}"                 # model family
-: "${MODEL_SIZE:=IQ4_XS}"                    # quantized size
+: "${MODEL_SIZE:=IQ4_XS}"                    # quantized size (downloaded later, NOT shipped in this repo)
+# The tuned EXP-014 260K config uses IQ4_XS (~19.3 GB). If your GPU cannot fit that at 262144 context, try the
+# lighter q4_k_m model first:  MODEL_SIZE=q4_k_m ./setup-server.sh   (it runs; 260K tuning is best on IQ4_XS).
 : "${SERVER_PORT:=8080}"
 : "${SERVER_HOST:=127.0.0.1}"                # 0.0.0.0 to reach on the LAN
 : "${SERVER_API_KEY:=}"                       # required from clients when the host is exposed
@@ -69,6 +71,11 @@ WorkingDirectory=$(pwd)
 # server.py installs a SIGTERM handler, so systemd's default stop is clean and frees the pinned RAM.
 Environment=PYTHONUNBUFFERED=1
 Environment=CUDA_DEVICE_ORDER=PCI_BUS_ID
+# EXP-014 tuned defaults (see INSTALL_REPORT.md, bench/results/ornith-3080ti/): chunk C=256 + fast-merge gives 63
+# tok/s @260K on the RTX 3080 Ti (+8.9% vs the C=64 default). Read by the engine at runtime; inherited by
+# run-server.sh, so the service reproduces the tuned numbers exactly. Override with --chunk-size / the env vars.
+Environment=STRATA_ATTN_CHUNK=256
+Environment=STRATA_ATTN_MERGE_FAST=1
 Environment=SERVER_PORT=${SERVER_PORT}
 Environment=SERVER_HOST=${SERVER_HOST}
 ${SERVER_API_KEY:+Environment=SERVER_API_KEY=${SERVER_API_KEY}}

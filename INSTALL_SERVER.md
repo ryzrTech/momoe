@@ -15,7 +15,12 @@ one script: [`setup-server.sh`](../setup-server.sh).
 A single OpenAI/Anthropic-compatible server on `127.0.0.1:8080`, managed by a **systemd user service** that starts on
 boot, restarts on crash, and stops cleanly. No system packages, kernel, or root service are modified.
 
-- **Model:** Ornith-1.5-35B-A3B (IQ4_XS, ~19 GB) on the `momoe` engine.
+- **Model:** Ornith-1.5-35B-A3B (IQ4_XS, ~19 GB) on the `momoe` engine. **Downloaded later, not shipped in the repo** —
+  run `setup-server.sh`, which fetches it. If your GPU cannot fit the ~19 GB IQ4_XS at 262144 context, **try the
+  lighter `q4_k_m` model first** (`MODEL_SIZE=q4_k_m ./setup-server.sh`); it runs, and IQ4_XS is the tuned choice for
+  the full 260K EXP-014 setup.
+- **API:** `http://127.0.0.1:8080/v1` (OpenAI) · `http://127.0.0.1:8080/v1/messages` (Anthropic) — **localhost only**.
+- **Correctness:** chat, reasoning and tool-calling verified. Full report in `INSTALL_REPORT.md`.
 - **API:** `http://127.0.0.1:8080/v1` (OpenAI) · `http://127.0.0.1:8080/v1/messages` (Anthropic) — **localhost only**.
 - **Correctness:** chat, reasoning and tool-calling verified. Full report in `INSTALL_REPORT.md`.
 
@@ -92,6 +97,18 @@ These are saved into the config by `setup-server.sh` (mirroring the config that 
 --max-context 262144 --kv-resident 262144 --memory-limit-mib 26624
 ```
 
+Chunk size and fast-merge (the EXP-014 win): set as **service-environment variables**, not `setup.sh` flags — the
+engine reads them at runtime, so `setup-server.sh` puts them in the systemd unit's `Environment=` and the running
+service reproduces them exactly:
+
+```
+STRATA_ATTN_CHUNK=256                        # fewer, larger Flash-Next partials -> cheaper merge (+8.9% vs C=64)
+STRATA_ATTN_MERGE_FAST=1                      # the fast merge kernel
+```
+
+Without `STRATA_ATTN_CHUNK=256` the engine falls back to the C=64 default (slower). Change a single run's chunk size
+with `STRATA_ATTN_CHUNK=128 ./bench.sh --long`, for example.
+
 Sampling (in the saved config): temperature 0.6, top_p 0.95, top_k 20.
 
 ---
@@ -107,6 +124,7 @@ Run with `./bench.sh --long`, 3 runs, medians — see
 | Chat first token | 0.20 s |
 | 4K prompt processing | **5,068 tok/s** (5,048 – 5,074); TTFT 0.81 s |
 | 16K prompt processing | **4,862 tok/s** (4,839 – 4,870); TTFT 3.33 s |
+| 260K decode (EXP-014) | **~63 tok/s** (59.8 – 63.1), ~1680 tok/s prefill — the tuned C=256 + fast-merge run; 131K ~82 tok/s |
 
 ---
 

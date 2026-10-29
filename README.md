@@ -278,6 +278,22 @@ hit rate in the main card's cache. The first answer after each start was about 2
 For two equal cards, the layer split should be the better choice: each card runs its own layers without waiting for
 the other inside a layer. That, other cards, other models and Windows are not measured.
 
+## Dedicated server (Ornith, EXP-014)
+
+To run Ornith-1.5-35B-A3B as an always-on server on a fresh Ubuntu box, use `setup-server.sh` — everything after the
+NVIDIA driver is one script. See [INSTALL_SERVER.md](INSTALL_SERVER.md) and [INSTALL_REPORT.md](INSTALL_REPORT.md).
+
+```sh
+git clone https://github.com/ryzrTech/momoe.git
+cd momoe
+./setup-server.sh
+```
+
+It downloads the model (installed later, **not shipped in the repo**) and starts a systemd user service. For the tuned
+**EXP-014** settings (chunk `C=256` + fast-merge) the server records **~63 tok/s @260K** (and ~1680 tok/s prefill) on
+the RTX 3080 Ti. If your GPU cannot fit the ~19 GB IQ4_XS at 262144 context, **try the lighter `q4_k_m` model first**
+(`MODEL_SIZE=q4_k_m ./setup-server.sh`).
+
 ## Where things are
 
 | Folder | What |

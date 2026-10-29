@@ -49,3 +49,16 @@ offers the same steps as tools.
   [docs/COMMUNITY_BENCHMARKS.md](docs/COMMUNITY_BENCHMARKS.md), compare against a same-day run of the build you are
   testing, and say what you did not test.
 - Open test requests and the hardware that is wanted are listed in [docs/TEST_REQUESTS.md](docs/TEST_REQUESTS.md).
+
+## The Ornith server (EXP-014 tuned config)
+
+The dedicated-server path (`setup-server.sh`, `INSTALL_SERVER.md`, `INSTALL_REPORT.md`) runs Ornith-1.5-35B-A3B with a
+measured best config. Per the rule above, its only *default* change is the QSA attention chunk size, and it was chosen
+because it was measured faster:
+
+- `STRATA_ATTN_CHUNK=256` with fast-merge (`STRATA_ATTN_MERGE_FAST=1`): fewer, larger Flash-Next partials -> a cheaper
+  post-chunk merge. **+8.9% decode over the C=64 default** — 63 tok/s vs 57.9 tok/s @260K, 82 tok/s vs 74.65 @131K, on
+  the RTX 3080 Ti (12 GB), native 262144 context, INT8 KV, IQ4_XS, NC=4. The chunk read is flat in C (~268 MB/layer),
+  so the win is purely the smaller merge. Record: `bench/results/ornith-3080ti/2026-10-19-community-rtx-3080-ti-ornith-1-5-35b-a3b-iq4-xs/`.
+- The model is downloaded at install time, **not shipped in the repo**. Try the lighter `q4_k_m` first on smaller GPUs
+  (`MODEL_SIZE=q4_k_m ./setup-server.sh`); IQ4_XS is the tuned choice for the full 260K run.
