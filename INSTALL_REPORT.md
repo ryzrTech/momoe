@@ -132,6 +132,22 @@ Full report: `bench/results/ornith-3080ti/2026-10-19-community-rtx-3080-ti-ornit
 | Agent conversation cache hit | **68.0 %** |
 | Agent turn first token | 0.88 s |
 
+### Long context (256K–262K) — same build, separate runs
+
+Measured at `--max-context 262144 --kv-resident 262144 --memory-limit-mib 26624`. "Original" and the "C256
+optimized" run are two separate benchmark passes; `—` = not measured (left blank, not estimated).
+
+| Context | Original decode | Optimized (C256) decode | Original prefill | Optimized (C256) prefill |
+| ---: | ---: | ---: | ---: | ---: |
+| 4K    | 135.6 | —  | 5,969  | —  |
+| 32K   | 102.9 | —  | 6,142  | —  |
+| 64K   | 84.3  | —  | 4,465  | —  |
+| 131K  | 59.6  | **81.94** | 2,838 | —  |
+| 260K  | 41.7  | **63.17** | 1,674 | **1,701** |
+
+Decode at 260K: **63.17 tok/s**, **+51.7%** over the 41.7 tok/s original. Prefill at 260K: **1,701 tok/s**.
+Full comparison: `bench/results/ornith-3080ti/2026-10-29-community-rtx-3080-ti-ornith-1-5-35b-a3b-iq4-xs-260k/`.
+
 **Additional live measurements (this machine):**
 
 | Metric | Value |
