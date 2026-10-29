@@ -466,6 +466,18 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
     add_executable(qsa_rows_bench EXCLUDE_FROM_ALL src/kernels/qsa_rows_bench.cpp)
     target_include_directories(qsa_rows_bench PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
     target_link_libraries(qsa_rows_bench PRIVATE strata_kernels CUDA::cudart)
+    # QSDENSE (this investigation): the QSA decode attention as a no-indexer model runs it - dense over the whole
+    # populated context (qsa_select_all), at the model's real geometry. Not in the default build:
+    #   cmake --build <dir> --target qsa_dense_bench
+    add_executable(qsa_dense_bench EXCLUDE_FROM_ALL src/kernels/qsa_dense_bench.cpp)
+    target_include_directories(qsa_dense_bench PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    target_link_libraries(qsa_dense_bench PRIVATE strata_kernels CUDA::cudart)
+    # G=8 dense attention experiment (report 05): numerical parity + CUDA-event perf of the INT8 v3 kernel specialised
+    # for eight query heads per KV head (opt-in STRATA_ATTN_V3_G8) against the default G=8 kernel. Not in default build:
+    #   cmake --build <dir> --target qsa_attn_g8
+    add_executable(qsa_attn_g8 EXCLUDE_FROM_ALL src/kernels/qsa_attn_g8.cpp)
+    target_include_directories(qsa_attn_g8 PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    target_link_libraries(qsa_attn_g8 PRIVATE strata_kernels CUDA::cudart)
   endif()
   # the QSA selection (block scores on the warp kernel and the tensor-core one, top-k): a GPU bench with a
   # scorer-vs-scorer comparison and an FP64 accuracy gate (synthetic, no model); the ctest runs a 32K context under a

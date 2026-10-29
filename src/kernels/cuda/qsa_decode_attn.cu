@@ -12,6 +12,7 @@
 #include <cuda_runtime.h>
 
 #include <cfloat>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -1061,6 +1062,13 @@ void decode_attn_batch_g(const float* q, const QsaAttnPools& pools, const int32_
         !pools.page_table || n_q > 65535) {
         std::fprintf(stderr, "qsa_decode_attn_batch: unsupported geometry or missing buffers\n");
         std::exit(1);
+    }
+    if (const char* v = std::getenv("STRATA_QSA_ATTN_STATS"); v != nullptr && v[0] == '1') {
+        static const auto t0 = std::chrono::steady_clock::now();
+        const int n_chunks = (int) ((cap + CHUNK - 1) / CHUNK);
+        const double bytes = (double) n_chunks * (double) s.n_head_kv * (double) n_q * (double) CHUNK * 2.0 * (double) s.head_dim;
+        const double us = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - t0).count();
+        std::fprintf(stderr, "[qsa-attn] n_q=%lld chunks=%d kvh=%d head=%d bytes=%.3fGB ms=%.2f\n", n_q, n_chunks, (int) s.n_head_kv, (int) s.head_dim, bytes / 1e9, us / 1e3);
     }
     cudaStream_t st = (cudaStream_t) stream;
     launch_chunks_batch<GG>(q, pools, ids, steps, cap, s, scratch, n_q, st, -1);
