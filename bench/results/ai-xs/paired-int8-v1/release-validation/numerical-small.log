@@ -1,0 +1,2 @@
+PASS dense int8 ctx 1000, 37 queries: vs FP64 old 4.2e-06 new 1.85e-06 (output scale 3.03); new vs old 4.23e-06 (1.2e-06 of scale); 0.250 -> 0.085 ms per chunk (2.94x)
+BITWISE_IDENTICAL=0

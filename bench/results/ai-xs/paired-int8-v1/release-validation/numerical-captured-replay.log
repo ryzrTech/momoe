@@ -1,0 +1,6 @@
+COLD_CALL ms=1131.9754
+PRETIMING_GATE max_abs=0 max_rel=0 normalized=0
+ITER=0 end_epoch_ms=1793681899051 ms=1124.780132
+EXP044 REPLAY engine=unknown obj_sha=unknown src=/home/ryzr/exp044-capture-repair/src/kernel.cu n_q=8192 width=253952 pages_ref=63488
+  cold_max=2.49503 finite=ok reps=1 best_ms=1124.7801 avg_ms=1124.7801
+  vs-captured max_abs=0 max_rel=0.000e+00 rel_scale=2.49503 mismatch_gt_1e-4=0 PASS

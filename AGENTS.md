@@ -7,18 +7,9 @@ app (`serve/`), and a one-click installer (`setup.py`, started by `setup.sh`).
 
 ## Running it as a dedicated AI server
 
-To turn a fresh Ubuntu machine into a dedicated, always-on server with the best-recorded tuned config, run
-**[`setup-server.sh`](setup-server.sh)** (see **[INSTALL_SERVER.md](INSTALL_SERVER.md)**):
+Use `./setup-server.sh` after cloning on Linux/systemd with a working NVIDIA driver. It selects the accepted AI-XS paired INT8 source profile, canonical Ornith IQ4_XS artifact, native 262144 context, INT8 KV, spec 4/min-p 0.5, automatic expert cache/prefill and 896 MiB VRAM reserve. Persistent service flags include split decode, chunk 256 and fast merge. Thinking remains enabled. Unsupported model/backend overrides must fail clearly rather than silently change quantization or context.
 
-1. Install the NVIDIA driver 580+ (the only sudo step): `sudo apt install -y nvidia-driver-580`.
-2. `git clone https://github.com/ryzrTech/momoe.git && cd momoe && ./setup-server.sh`.
-
-It installs the Ornith IQ4_XS model with the tuned flags (`--spec 4 --spec-min-p 0.5 --kv int8 --expert-cache auto
---prefill auto --max-context 262144 --kv-resident 262144 --memory-limit-mib 26624`), then installs a systemd user
-service (`momoe-ai-server.service`, enabled with linger) and starts it on `127.0.0.1:8080`. Everything after the driver
-runs as your user, no sudo. Override access with env vars (`SERVER_HOST`, `SERVER_API_KEY`, `SERVER_USER_SERVICE`, ...);
-see `INSTALL_SERVER.md`. The service and its flags are the same ones that produced the benchmark in
-`INSTALL_REPORT.md`.
+See [INSTALL_SERVER.md](INSTALL_SERVER.md) and [INSTALL_REPORT.md](INSTALL_REPORT.md). The installer must build the profile from source, include profile identity in build cache validity, verify loaded/native-context health and roll back failed service cutovers. Default loopback binding; non-loopback requires a key. No kernel/firmware/driver/power/clock changes are part of this application installer.
 
 ## Installing Strata for a user
 
@@ -50,15 +41,8 @@ offers the same steps as tools.
   testing, and say what you did not test.
 - Open test requests and the hardware that is wanted are listed in [docs/TEST_REQUESTS.md](docs/TEST_REQUESTS.md).
 
-## The Ornith server (EXP-014 tuned config)
+## Accepted tune and unfinished research
 
-The dedicated-server path (`setup-server.sh`, `INSTALL_SERVER.md`, `INSTALL_REPORT.md`) runs Ornith-1.5-35B-A3B with a
-measured best config. Per the rule above, its only *default* change is the QSA attention chunk size, and it was chosen
-because it was measured faster:
+The accepted historical paired INT8 result is 1031.9 prefill / 66.6 decode at 259944 fresh tokens, zero reuse, thinking enabled. The latest control measured 1017.2/66.5; later candidates have no accepted repeatable full-model gain. Do not advertise 1700 fresh prefill or universal 70 decode. Preserve exact canonical weights, native context and numerical gates.
 
-- `STRATA_ATTN_CHUNK=256` with fast-merge (`STRATA_ATTN_MERGE_FAST=1`): fewer, larger Flash-Next partials -> a cheaper
-  post-chunk merge. **+8.9% decode over the C=64 default** — 63 tok/s vs 57.9 tok/s @260K, 82 tok/s vs 74.65 @131K, on
-  the RTX 3080 Ti (12 GB), native 262144 context, INT8 KV, IQ4_XS, NC=4. The chunk read is flat in C (~268 MB/layer),
-  so the win is purely the smaller merge. Record: `bench/results/ornith-3080ti/2026-10-19-community-rtx-3080-ti-ornith-1-5-35b-a3b-iq4-xs/`.
-- The model is downloaded at install time, **not shipped in the repo**. Try the lighter `q4_k_m` first on smaller GPUs
-  (`MODEL_SIZE=q4_k_m ./setup-server.sh`); IQ4_XS is the tuned choice for the full 260K run.
+[docs/ai-xs/optimization-record.md](docs/ai-xs/optimization-record.md) records accepted/rejected/saved candidates. [docs/ai-xs/research-next.md](docs/ai-xs/research-next.md) records unrun in-request A/B numerical/full-model tests. These diagnostic kernels must not become an install default. Complete research requires independent code/raw-data review and matched fresh full-model correctness, semantic and decode acceptance; a microbenchmark win is insufficient.

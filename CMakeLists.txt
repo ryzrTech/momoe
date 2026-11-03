@@ -69,6 +69,23 @@ if(STRATA_HIP_GFX906)
   set(STRATA_ENABLE_CUDA ON CACHE BOOL "" FORCE)
 endif()
 option(STRATA_ENABLE_HIP "Build the HIP targets for wave32 AMD GPUs (gfx1100, gfx1201; gfx1012/gfx1030 unvalidated)" OFF)
+# AIXS dedicated-server profile: the tuned INT8 QSA prompt-attention + prefill pair (the golden Ornith IQ4_XS build).
+# CUDA only - it is the tuned variant, not the default kernel, so it is built only when STRATA_ENABLE_CUDA selects the
+# CUDA backend, and it fails clearly on any other backend instead of silently building the default one.
+option(STRATA_AIXS_PAIRED_INT8 "AIXS: the tuned INT8 QSA prompt-attention + prefill pair (CUDA only, dedicated server)" OFF)
+if(STRATA_AIXS_PAIRED_INT8 AND NOT (STRATA_ENABLE_CUDA AND NOT STRATA_ENABLE_HIP AND NOT STRATA_HIP_GFX906))
+  message(FATAL_ERROR "STRATA_AIXS_PAIRED_INT8 is CUDA-only (the tuned Ornith IQ4_XS pair). Enable STRATA_ENABLE_CUDA=ON"
+                      "and keep STRATA_ENABLE_HIP and STRATA_HIP_GFX906 off (HIP/SYCL/METAL builds are not supported)")
+endif()
+# AIXS profile: when on, the tuned INT8 pair is built instead of the default kernel + prefill. The originals (and the
+# default backend) are preserved; the variants sit beside them (qsa_prompt_attn_paired.cu, prefill_paired.cpp). On a
+# non-CUDA build the option above already failed, so this is only reached on CUDA.
+set(_strata_qsa_prompt_src src/kernels/cuda/qsa_prompt_attn.cu)
+set(_strata_prefill_src src/prefill/prefill.cpp)
+if(STRATA_AIXS_PAIRED_INT8 AND STRATA_ENABLE_CUDA AND NOT STRATA_ENABLE_HIP)
+  set(_strata_qsa_prompt_src src/kernels/cuda/qsa_prompt_attn_paired.cu)
+  set(_strata_prefill_src src/prefill/prefill_paired.cpp)
+endif()
 option(STRATA_PREFILL_MMQ "Build the optional GGML MMQ prefill path for HIP" OFF)
 # MMQ prompt kernels for Q4_K / Q5_K / Q5_1 / Q6_K (Unsloth's UD-Q4/Q5/Q6_K_XL experts; on HIP also the dense GGUF
 # projections, STRATA_DENSE_MMQ).  On by default since MODEL-UPDATE Phase 1: on CUDA they are their own library
@@ -392,7 +409,7 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
                           src/kernels/cuda/fused_gr.cu
                           src/kernels/cuda/cvec.cu
                           src/kernels/cuda/qsa_decode_attn.cu
-                          src/kernels/cuda/qsa_prompt_attn.cu
+                          ${_strata_qsa_prompt_src}
                           src/kernels/cuda/fused_gdn.cu
                           src/kernels/cuda/dequant_bf16.cu
                           src/kernels/cuda/qsa_select.cu
@@ -688,7 +705,7 @@ if(STRATA_ENABLE_CUDA OR STRATA_ENABLE_HIP)
   # what composes them into a token.  No tokenizer - the prompt arrives as ids - because Gate C1 compares logits
   # against llama.cpp on the SAME ids and a tokenizer on one side of that comparison is a second variable.
   # plan v0.3 P5: batched prompt processing (tensor-core GEMMs through cuBLAS).
-  add_library(strata_prefill STATIC src/prefill/gemm.cu src/prefill/kernels.cu src/prefill/prefill.cpp)
+  add_library(strata_prefill STATIC src/prefill/gemm.cu src/prefill/kernels.cu ${_strata_prefill_src})
   if(STRATA_ENABLE_HIP)
     # #313: the RDNA3 WMMA GEMMs include hip_runtime.h: AMD builds only (a CUDA build never sees this file)
     target_sources(strata_prefill PRIVATE src/prefill/wmma_gemm.cu)

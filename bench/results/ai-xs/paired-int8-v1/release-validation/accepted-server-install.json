@@ -1,0 +1,18 @@
+{
+  "profile": "aixs-paired-int8-v1",
+  "engine_sha256": "4eb7cdcc8a0a6a155e49e1bcbfb1ab946b4b5efbd63d979a9d56ba45fca04364",
+  "model_sha256": "d6aef57fa948e9bba3ca4959b3c237ed898c605471f48c73a32cedbd24aabe70",
+  "service": "momoe-aixs-install-validation",
+  "health": {
+    "status": "ok",
+    "max_context": 262144,
+    "model": "ornith-1.5-35b-a3b-iq4_xs",
+    "images": false,
+    "api_key": false,
+    "image_generation": false,
+    "loaded": true,
+    "service": "strata"
+  },
+  "checked_epoch": 1793682042.430079,
+  "hardware_policy_changed": false
+}

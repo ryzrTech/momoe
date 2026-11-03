@@ -1,0 +1,10 @@
+{
+  "ran": 100,
+  "failures": 0,
+  "errors": 0,
+  "excluded_preexisting_failures": [
+    "tools.test_setup_choices.CalibrateWithModel.test_a_model_not_installed_is_an_error",
+    "tools.test_setup_choices.CalibrateWithModel.test_model_is_the_target"
+  ],
+  "baseline_same_failures_verified": true
+}

@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "err": null,
+  "ttft_s": 70.043,
+  "total_s": 76.027,
+  "prompt_tokens": 128062,
+  "reused_tokens": 0,
+  "read_tokens": 128062,
+  "generated_tokens": 581,
+  "prompt_tps": 1831.4,
+  "prompt_tps_source": "engine",
+  "decode_tps": 96.9,
+  "decode_tps_source": "engine",
+  "prompt_ms": 69926.2,
+  "decode_ms": 5998.2,
+  "drafts_offered": 282,
+  "drafts_accepted": 241,
+  "expected": [
+    "0d6ad0e0b9ca",
+    "9499a3c86f69",
+    "6bd5dbbd4320"
+  ],
+  "answer": "## Summary of Word Types\n\nThe list is composed almost entirely of common nouns drawn from a handful of thematic categories. Many words describe natural landscape features, such as canyon, meadow, river, harbor, garden, and stone. A number of terms refer to colors, materials, or substances, including copper, violet, quartz, ember, and amber. Several words denote textiles or fabric-related terms, most notably velvet. A set of words represents objects or tools, such as lantern, signal, anchor, needle, and ledger. Finally, some words capture natural phenomena or seasonal concepts, including thunder, winter, and orbit.\n\n## Audit Key Values\n\n- **AUDIT KEY ALPHA** = `0d6ad0e0b9ca`\n- **AUDIT KEY BETA** = `9499a3c86f69`\n- **AUDIT KEY GAMMA** = `6bd5dbbd4320`",
+  "passed": true
+}

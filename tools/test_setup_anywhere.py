@@ -116,14 +116,20 @@ class MacPool(unittest.TestCase):
 class Routing(unittest.TestCase):
     def run_main(self, platform, gpus, argv):
         calls = []
-        with mock.patch.object(setup.sys, "platform", platform), \
-                mock.patch.object(setup, "WIN", False), \
-                mock.patch.object(setup, "gpus", return_value=gpus), \
-                mock.patch.object(setup, "gpu_problem", return_value=None), \
-                mock.patch.object(setup, "momoe_setup", side_effect=lambda *x: calls.append(x) or 0), \
-                mock.patch.object(setup, "step", side_effect=SystemExit("Strata's path")), \
-                mock.patch.object(setup.sys, "argv", ["setup.py", "--setup", "--yes", "--no-start"] + argv), \
-                mock.patch.dict(os.environ, {"MOMOE_MAC_MEMORY_GIB": "64"}):
+        with (
+                mock.patch.object(setup, "data_folder", return_value=(Path("/fixture-data"), [])),
+                mock.patch.object(setup, "move_configs"),
+                mock.patch.object(setup, "momoe_names"),
+                mock.patch.object(setup, "installed_configs", return_value=[]),
+                mock.patch.object(setup, "load_settings", return_value={}),
+                mock.patch.object(setup.sys, "platform", platform),
+                mock.patch.object(setup, "WIN", False),
+                mock.patch.object(setup, "gpus", return_value=gpus),
+                mock.patch.object(setup, "gpu_problem", return_value=None),
+                mock.patch.object(setup, "momoe_setup", side_effect=lambda *x: calls.append(x) or 0),
+                mock.patch.object(setup, "step", side_effect=SystemExit("Strata's path")),
+                mock.patch.object(setup.sys, "argv", ["setup.py", "--setup", "--yes", "--no-start"] + argv),
+                mock.patch.dict(os.environ, {"MOMOE_MAC_MEMORY_GIB": "64"})):
             try:
                 setup.main()
             except SystemExit:

@@ -1,0 +1,13 @@
+.  The engine's source changed: compiling it again (only what changed, a few minutes) ...
+  [ok] engine compiled: /tmp/ss-build-xgoappz6/engine/momoe
+.  [ok] engine already built for this PC
+.  The engine's source changed: compiling it again (only what changed, a few minutes) ...
+  [ok] engine compiled: /tmp/ss-build-2bd196_d/engine/momoe
+.  [ok] engine already built for this PC
+  [ok] engine already built for this PC
+.................................
+----------------------------------------------------------------------
+Ran 37 tests in 0.878s
+
+OK
+Loaded accepted profile at native 262144; service momoe-ai-server.service is enabled.

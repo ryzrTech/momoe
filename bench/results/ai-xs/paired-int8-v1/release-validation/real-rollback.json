@@ -1,0 +1,15 @@
+{
+  "forced_health_failure": true,
+  "all_snapshots_restored": true,
+  "prior_service_healthy": true,
+  "health": {
+    "status": "ok",
+    "max_context": 262144,
+    "model": "ornith-1.5-35b-a3b-iq4_xs",
+    "images": false,
+    "api_key": false,
+    "image_generation": false,
+    "loaded": true,
+    "service": "strata"
+  }
+}

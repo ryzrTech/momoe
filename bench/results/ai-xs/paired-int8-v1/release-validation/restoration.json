@@ -1,0 +1,21 @@
+{
+  "health": {
+    "status": "ok",
+    "max_context": 262144,
+    "model": "Iris:35B",
+    "images": false,
+    "api_key": false,
+    "image_generation": false,
+    "loaded": true,
+    "service": "strata"
+  },
+  "gpu": {
+    "pid": 316204,
+    "exe": "/home/ryzr/momoe/engine/momoe-paired-int8-20261102",
+    "sha256": "b2c0417032bb9413f118204a3c64a133957e18663bf77ae1dcccebdce054aa85"
+  },
+  "protected_files_unchanged": true,
+  "test_service_removed": true,
+  "exit": 0,
+  "error": null
+}

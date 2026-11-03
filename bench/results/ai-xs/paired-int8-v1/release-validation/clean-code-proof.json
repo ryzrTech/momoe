@@ -1,0 +1,12 @@
+{
+  "accepted_executable_sha256": "b2c0417032bb9413f118204a3c64a133957e18663bf77ae1dcccebdce054aa85",
+  "source_sha256": "2e5b8250f5d7953415fb5b8313c5d49242865ced4f42bd51c2d3b90fcb13fc96",
+  "prefill_source_sha256": "532b76ad7dbe30e224991b98b44a1557cf68aa6c902f3fe4a3288f3e743bcc12",
+  "clean_build_executable_sha256": "4eb7cdcc8a0a6a155e49e1bcbfb1ab946b4b5efbd63d979a9d56ba45fca04364",
+  "object_sha256": "8bf94fdb1557dae762e6f1df7ebb01db215024cc33c32997be9647966098b9e1",
+  "paired_encoding_words": 5040,
+  "paired_code_sha256": "b4225af284ae4ecd00aaba76829433c388f3f864db79223748c757e3ed1144bf",
+  "object_equals_accepted_pair": true,
+  "linked_executable_equals_accepted_pair": true,
+  "GPU_work_performed": false
+}

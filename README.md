@@ -278,21 +278,21 @@ hit rate in the main card's cache. The first answer after each start was about 2
 For two equal cards, the layer split should be the better choice: each card runs its own layers without waiting for
 the other inside a layer. That, other cards, other models and Windows are not measured.
 
-## Dedicated server (Ornith, EXP-014)
+## Dedicated server: verified paired INT8 profile
 
-To run Ornith-1.5-35B-A3B as an always-on server on a fresh Ubuntu box, use `setup-server.sh` — everything after the
-NVIDIA driver is one script. See [INSTALL_SERVER.md](INSTALL_SERVER.md) and [INSTALL_REPORT.md](INSTALL_REPORT.md).
+On a Linux/systemd machine with a working NVIDIA driver:
 
-```sh
+```bash
 git clone https://github.com/ryzrTech/momoe.git
 cd momoe
 ./setup-server.sh
 ```
 
-It downloads the model (installed later, **not shipped in the repo**) and starts a systemd user service. For the tuned
-**EXP-014** settings (chunk `C=256` + fast-merge) the server records **~63 tok/s @260K** (and ~1680 tok/s prefill) on
-the RTX 3080 Ti. If your GPU cannot fit the ~19 GB IQ4_XS at 262144 context, **try the lighter `q4_k_m` model first**
-(`MODEL_SIZE=q4_k_m ./setup-server.sh`).
+The script builds the accepted paired INT8 source profile and installs Ornith 1.5 35B-A3B IQ4_XS at its native **262,144-token context**, with INT8 KV, speculative depth 4, split decode and the measured server settings. The service starts at boot and listens on localhost by default. It does not select later experimental kernels or modify GPU firmware, boot, clocks or power.
+
+The accepted RTX 3080 Ti trial measured **1,031.9 prefill / 66.6 decode tokens/s at 259,944 fresh tokens with zero reuse and thinking enabled**. Results vary by workload and operating state; this is not a speed guarantee. The historical roughly 1,700 prefill figure is not an established fresh-260K baseline. The reference host's separately configured GPU unlock is not installed by this script.
+
+See [installation and recovery](INSTALL_SERVER.md), [deployment evidence](INSTALL_REPORT.md), [completed experiments](docs/ai-xs/optimization-record.md) and [remaining research tests](docs/ai-xs/research-next.md). Model weights are downloaded or reused at installation, not shipped in Git.
 
 ## Where things are
 

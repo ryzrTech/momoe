@@ -16,15 +16,35 @@ HOST="${SERVER_HOST:-127.0.0.1}"
 LOG="$ROOT/logs/server.log"
 mkdir -p "$ROOT/.momoe" "$ROOT/logs"
 
+# security: a bind beyond this PC (0.0.0.0 / a LAN address) is refused without an API key, so a misconfigured server is
+# never left reachable on the network unauthenticated. The unit binds 127.0.0.1 by default.
+if [[ "$HOST" != "127.0.0.1" && "$HOST" != "localhost" && "$HOST" != "::1" ]] && [ -z "${SERVER_API_KEY:-}" ]; then
+  echo "refusing to bind $HOST without a SERVER_API_KEY (it would expose the server on the network)" >&2
+  exit 1
+fi
+
 # model name, pulled from the config so the status/recorded info is accurate
 MODEL_NAME="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("model_name",""))' "$CFG" 2>/dev/null || true)"
 
-cat > "$ROOT/.momoe/server.json" <<EOF
-{"pid": $$, "port": ${PORT}, "config": "${CFG}", "host": "${HOST}", "model": "${MODEL_NAME}", "log": "${LOG}", "started": $(date +%s)}
-EOF
+# record the running server atomically with proper JSON escaping (paths are json.dump'ed, not interpolated)
+python3 - "$ROOT/.momoe/server.json" "$$" "$PORT" "$CFG" "$HOST" "$MODEL_NAME" "$LOG" <<'JSONPY'
+import json, os, sys, time
+path, pid, port, cfg, host, model, log = sys.argv[1:8]
+os.makedirs(os.path.dirname(path), exist_ok=True)
+tmp = path + ".tmp"
+json.dump({"pid": int(pid), "port": int(port), "config": cfg, "host": host,
+           "model": model, "log": log, "started": int(time.time())},
+          open(tmp, "w"), indent=1)
+os.replace(tmp, path)
+JSONPY
 
 # server.py auto-adds the config's lib_dirs to LD_LIBRARY_PATH; set it explicitly too for the engine's CUDA libs.
 export LD_LIBRARY_PATH="${ROOT}/.momoe/lib_dirs:${LD_LIBRARY_PATH:-}"
 
-exec "$ROOT/.venv/bin/python" "$ROOT/serve/server.py" --engine strata \
-  --config "$CFG" --port "$PORT" "${SERVER_API_KEY:+--api-key "${SERVER_API_KEY}"}" "$@"
+# Build the argument list with a proper argv array: --host is passed explicitly (run-server.sh used to ignore it), and
+# --api-key is added as a single argument only when set, never interpolated into a quoted word and never echoed.
+args=(--engine strata --config "$CFG" --host "$HOST" --port "$PORT")
+if [ -n "${SERVER_API_KEY:-}" ]; then
+  args+=(--api-key "$SERVER_API_KEY")
+fi
+exec "$ROOT/.venv/bin/python" "$ROOT/serve/server.py" "${args[@]}" "$@"

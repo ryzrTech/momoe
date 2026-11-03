@@ -3994,13 +3994,36 @@ def install_build_tools(gpu, yes):
     return nvcc, find_vcvars(cuda_v) if WIN else None
 
 
-def cmake_build(src, bdir, target, defs, vcvars, bat_name):
+def _atomic_replace(dst: Path, src: Path) -> None:
+    """Replace dst from src without opening dst in place: writing a running binary fails with ETXTBSY (Text file
+    busy). Copy to a temp file in the same directory, then os.replace it across - atomic, and safe over the running
+    engine inode (the old one is freed once the process closes it)."""
+    tmp = dst.with_name("." + dst.name + ".tmp-" + str(os.getpid()))
+    try:
+        shutil.copy2(src, tmp)
+        os.replace(tmp, dst)
+    except BaseException:
+        try:
+            if tmp.exists():
+                tmp.unlink()
+        except OSError:
+            pass
+        raise
+
+
+def cmake_build(src, bdir, target, defs, vcvars, bat_name, jobs=None):
+    """-j for the build: an explicit positive $CMAKE_BUILD_PARALLEL_LEVEL wins; otherwise half the
+    cores, floored at 2. The dedicated installer passes 2 so a shared busy PC keeps the resident model's
+    VRAM/RAM instead of saturating the build."""
     cmake, ninja = find_tool("cmake"), find_tool("ninja")
     if cmake is None or ninja is None:
         fail("cmake / ninja not found after installing them", "run: .venv python -m pip install cmake ninja")
     conf = [cmake, "-G", "Ninja", f"-DCMAKE_MAKE_PROGRAM={ninja}", "-S", str(src), "-B", str(bdir),
             "-DCMAKE_BUILD_TYPE=Release", *defs]
-    build = [cmake, "--build", str(bdir), "--target", target, "-j", str(max(2, (os.cpu_count() or 4) // 2))]
+    if jobs is None:
+        env_j = (os.environ.get("CMAKE_BUILD_PARALLEL_LEVEL") or "").strip()
+        jobs = int(env_j) if env_j.isdigit() and int(env_j) > 0 else max(2, (os.cpu_count() or 4) // 2)
+    build = [cmake, "--build", str(bdir), "--target", target, "-j", str(jobs)]
     # A failed build is tried once more: CUDA 13.0's ptxas now and then fails to parse a PTX file it just wrote, and
     # the same command then gets past it (issue #45); a second attempt only compiles what is still missing.
     if WIN:
@@ -4093,10 +4116,16 @@ def build_engine(gpu, vision, yes, llama, toolkit=None, more=False) -> Path:
     # same; the compile keeps the generations it was built for
     new_arch = local and not set(archs) <= built
     floor = cpu_floor(cpu_info()[1])                     # "" on an AVX2 CPU: the normal engine
+    # AIXS profile: the dedicated-server INT8 pair. setup-server.sh sets it in the environment; the plain setup keeps
+    # the default off for new installs and retains the installed selection on updates. The cache records it.
+    profile_selection = os.environ.get("STRATA_AIXS_PAIRED_INT8")
+    want_profile = bool(meta.get("profile", False)) if profile_selection is None else \
+        profile_selection.strip().lower() in ("1", "on", "true", "yes")
     # more: a MORE_SIZES file - an engine of this source without its formats (compiled in a build folder configured
     # when the Q6_K experts were off by default) is compiled again, now with them named
     engine_ok = local and (eng / EXE).exists() and meta.get("src") == src and not new_arch and \
-        (meta.get("isa_floor") or "") == floor and not stale_binary(eng / EXE) and (not more or engine_runs_more(eng))
+        (meta.get("isa_floor") or "") == floor and bool(meta.get("profile", False)) == want_profile and \
+        not stale_binary(eng / EXE) and (not more or engine_runs_more(eng))
     vision_ok = not want_vision or ((eng / VEXE).exists() and (not local or meta.get("vision_src") == vsrc))
     if engine_ok and vision_ok:
         ok("engine already built for this PC")
@@ -4115,6 +4144,7 @@ def build_engine(gpu, vision, yes, llama, toolkit=None, more=False) -> Path:
                     # STRATA_Q6K_EXPERTS and STRATA_MMQ_KQUANTS named: a build folder configured when they were off by
                     # default keeps them off (#2515)
                     ["-DSTRATA_ENABLE_CUDA=ON", "-DSTRATA_BUILD_TESTS=OFF", "-DSTRATA_Q6K_EXPERTS=ON", "-DSTRATA_MMQ_KQUANTS=ON",
+                     "-DSTRATA_AIXS_PAIRED_INT8=" + ("ON" if want_profile else "OFF"),
                      f"-DCMAKE_CUDA_ARCHITECTURES={cuda_archs}",
                      f"-DCMAKE_CUDA_COMPILER={nvcc}", *toolkit_root_defs(nvcc), f"-DSTRATA_GGML_DIR={llama}",
                      *host_compiler_defs(True), *engine_defs(archs, toolkit),
@@ -4124,9 +4154,9 @@ def build_engine(gpu, vision, yes, llama, toolkit=None, more=False) -> Path:
             fail(f"the engine build finished without a new engine ({EXE} is version {binary_engine_version(bdir / EXE)}, "
                  f"this source is {source_version()}): the installed engine and its stamp are left as they were",
                  "the build folder " + str(bdir) + " may be configured for something else: delete it and run this again")
-        shutil.copy2(bdir / EXE, eng / EXE)
+        _atomic_replace(eng / EXE, bdir / EXE)   # over the running inode: atomic replace, not ETXTBSY
         if (bdir / KQ_LIB).exists():                      # built with it (Phase 1): it goes next to the engine
-            shutil.copy2(bdir / KQ_LIB, eng / KQ_LIB)
+            _atomic_replace(eng / KQ_LIB, bdir / KQ_LIB)
         elif (eng / KQ_LIB).exists():                     # an older one of another build would only be refused
             (eng / KQ_LIB).unlink()
     if not vision_ok:
@@ -4138,13 +4168,13 @@ def build_engine(gpu, vision, yes, llama, toolkit=None, more=False) -> Path:
                      *toolkit_root_defs(nvcc)]
         cmake_build(ROOT / "tools" / "vision", vdir, "strata-vision", defs, vcvars,
                     "build-vision-cuda12.bat" if t12 else "build-vision.bat")
-        shutil.copy2(vdir / "bin" / VEXE, eng / VEXE)
+        _atomic_replace(eng / VEXE, vdir / "bin" / VEXE)
     bindir = Path(nvcc).parent                            # the toolkit's own libraries (bin, bin/x64, lib64)
     dirs = [str(d) for d in (bindir, bindir / "x64", bindir.parent / "lib64") if d.is_dir()]
     stamp.write_text(json.dumps({"source": "local", "version": source_version(), "archs": archs,
                                  "vision": vision, **({"toolkit": 12} if t12 else {}),
                                  "cuda_dirs": dirs, "src": src, "vision_src": vsrc if want_vision else None,
-                                 **({"isa_floor": floor} if floor else {})}, indent=1))
+                                 **({"isa_floor": floor} if floor else {}), "profile": want_profile}, indent=1))
     ok(f"engine compiled: {eng / EXE}")
     return eng
 
@@ -4517,7 +4547,7 @@ def repoint_config(cfg_file: Path, old: Path, new: Path) -> None:
         write_config(cfg_file, new_cfg)
 
 
-def data_folder(requested: str | None) -> tuple:
+def data_folder(requested: str | None, *, migrate: bool = True) -> tuple:
     """(the data folder, folders on other drives that still hold model files).  Moves the model files of earlier Momoe
     folders on the same drive into the data folder, and points their configs there.  Momoe's default data folder is
     the Momoe folder itself (models/, packs/, mtp/ in it); --data-dir picks another and is remembered."""
@@ -4532,8 +4562,8 @@ def data_folder(requested: str | None) -> tuple:
     elsewhere = []
     # #198: the data folder remembered before (a --data-dir to a new place) is a source too, and so is a Strata-data
     # folder nested in any of them (an install that kept its models one level down)
-    sources = [ROOT, *other_installs(settings)]
-    if settings.get("data_dir") and Path(settings["data_dir"]) != dest:
+    sources = [ROOT, *other_installs(settings)] if migrate else []
+    if migrate and settings.get("data_dir") and Path(settings["data_dir"]) != dest:
         sources.append(Path(settings["data_dir"]))
     sources += [f / "Strata-data" for f in list(sources) if (f / "Strata-data") != dest]
     seen = set()
@@ -6480,7 +6510,7 @@ def install_own_path(a, family, gpu, hip, amd, cuda_tk, multi, port, ram, adopte
         ok(f"vision encoder: {mmproj}")
 
     step(6, "preparing the model for Momoe")
-    data, _ = data_folder(a.data_dir)
+    data, _ = data_folder(a.data_dir, migrate=not a.no_data_migration)
     pack = data / "packs" / tag.lower()            # only the tokenizer: the engine reads the GGUF itself
     if not (pack / "tokenizer" / "vocab.json").exists():
         run([sys.executable, str(ROOT / "tools" / "strata_tokenizer.py"), "--gguf", str(gguf), "--out", str(pack)],
@@ -6661,6 +6691,8 @@ def main() -> int:
     ap.add_argument("--data-dir", help="where the model files go (~20-120 GB): default this folder (models/, packs/, "
                                        "mtp/); a folder given here is remembered for every Momoe folder on this PC")
     ap.add_argument("--models-dir", help="where the GGUF files go (default: <data folder>/models)")
+    ap.add_argument("--no-data-migration", action="store_true",
+                    help="leave other installations and their model files untouched")
     ap.add_argument("--gguf-dir", help="use GGUF files you already have (a folder with every shard: "
                                        "<name>-00001-of-0000N.gguf ... -0000N-of-0000N.gguf)")
     ap.add_argument("--yes", action="store_true", help="accept the recommended answers")
@@ -6749,7 +6781,7 @@ def main() -> int:
     for d in (engine_dir(13), engine_dir(12)):          # Momoe: an engine installed under Strata's names
         momoe_names(d)
     move_configs()                                     # Momoe: configs from before config/
-    data, elsewhere = data_folder(a.data_dir)          # the model files: in the data folder, found from any copy
+    data, elsewhere = data_folder(a.data_dir, migrate=not a.no_data_migration)
     roots = [data, *elsewhere]
     if a.models_dir is None:
         a.models_dir = str(data / "models")

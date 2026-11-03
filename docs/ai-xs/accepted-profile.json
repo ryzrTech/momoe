@@ -1,0 +1,60 @@
+{
+  "profile_id": "aixs-paired-int8-v1",
+  "base_commit": "0937f97586f552136cc25e0a02100df501302c76",
+  "accepted_executable_sha256": "b2c0417032bb9413f118204a3c64a133957e18663bf77ae1dcccebdce054aa85",
+  "source_inputs": {
+    "paired-kernel.cu": "2e5b8250f5d7953415fb5b8313c5d49242865ced4f42bd51c2d3b90fcb13fc96",
+    "prefill.cpp": "532b76ad7dbe30e224991b98b44a1557cf68aa6c902f3fe4a3288f3e743bcc12",
+    "qsa_prompt_attn.hpp": "da90f437602c1581a991da183c19c82389a129fc79edb106554c7146394cd6f5"
+  },
+  "model": {
+    "filename": "Ornith-1.5-35B-A3B-IQ4_XS.gguf",
+    "sha256": "d6aef57fa948e9bba3ca4959b3c237ed898c605471f48c73a32cedbd24aabe70",
+    "same_native_and_mtp": true,
+    "native_context": 262144,
+    "kv": "int8",
+    "thinking_enabled": true
+  },
+  "runtime": {
+    "spec": 4,
+    "spec_min_p": 0.5,
+    "expert_cache": "auto",
+    "prefill": "auto",
+    "vram_reserve_mib": 896
+  },
+  "environment": {
+    "STRATA_QSA_SPLIT_ATTN": "1",
+    "STRATA_ATTN_CHUNK": "256",
+    "STRATA_ATTN_MERGE_FAST": "1",
+    "CUDA_DEVICE_ORDER": "PCI_BUS_ID"
+  },
+  "hardware_modifications_by_installer": false,
+  "measured_hardware": "RTX 3080 Ti 12 GiB, Ryzen 9 3950X, 30 GiB usable RAM",
+  "measured_environment": "Ubuntu 26.04.1, CUDA 13.1, NVIDIA 595.99.02, separately validated GPU unlock and 300 W policy",
+  "accepted_benchmark": {
+    "fresh_tokens": 259944,
+    "reused_tokens": 0,
+    "output_cap": 1024,
+    "prefill_tps": 1031.9,
+    "decode_tps": 66.6,
+    "quality128k_passed": true
+  },
+  "later_experiments_promoted": false,
+  "fresh_release_build_validation": {
+    "status": "passed",
+    "executable_sha256": "4eb7cdcc8a0a6a155e49e1bcbfb1ab946b4b5efbd63d979a9d56ba45fca04364",
+    "prefill_tps": 1028.4,
+    "decode_tps": 66.4,
+    "fresh_tokens": 259944,
+    "reused_tokens": 0,
+    "generated_tokens": 388,
+    "same_messages_and_output_digests": true,
+    "paired_gpu_instruction_words_equal_accepted": 5040,
+    "focused_cpu_tests_passed": 37,
+    "quality128k_passed": true,
+    "forced_service_and_filesystem_rollback_passed": true,
+    "original_accepted_default_restored": true,
+    "canonical_gguf_reused_not_redownloaded": true,
+    "clean_os_bootstrap_tested": false
+  }
+}

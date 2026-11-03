@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "err": null,
+  "ttft_s": 69.708,
+  "total_s": 85.422,
+  "prompt_tokens": 128061,
+  "reused_tokens": 0,
+  "read_tokens": 128061,
+  "generated_tokens": 1807,
+  "prompt_tps": 1835.9,
+  "prompt_tps_source": "engine",
+  "decode_tps": 115.2,
+  "decode_tps_source": "engine",
+  "prompt_ms": 69754.5,
+  "decode_ms": 15536.4,
+  "drafts_offered": 932,
+  "drafts_accepted": 859,
+  "expected": [
+    "8a80b49bfbc5",
+    "2f37fd125561",
+    "f6cc3456ce4d"
+  ],
+  "answer": "## Summary of Word Types\n\nThe list is composed almost entirely of **common English nouns**, drawn from a small, tightly themed vocabulary. Many words denote **natural landforms and geographic features** (canyon, meadow, harbor, river, stone, garden, market). A large cluster refers to **colors and materials**, especially warm, earthy, or jewel-toned terms (violet, copper, quartz, velvet, ember, amber, garnet, jade, pearl). Several words name **objects and tools** (anchor, lantern, needle, signal, ledger, compass, market). A number of terms relate to **celestial or spatial concepts** (orbit, harbor, anchor, signal). Finally, some words evoke **seasonal or atmospheric conditions** (winter, thunder, storm, frost, breeze). Overall, the vocabulary is concrete, sensory, and nature-oriented, with a strong emphasis on texture, color, and landscape imagery.\n\n## Audit Key Values\n\n- **ALPHA:** `8a80b49bfbc5`\n- **BETA:** `2f37fd125561`\n- **GAMMA:** `f6cc3456ce4d`",
+  "passed": true
+}
